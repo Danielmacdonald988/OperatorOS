@@ -156,6 +156,7 @@ export class MemStorage implements IStorage {
     const blueprint: Blueprint = { 
       ...insertBlueprint, 
       id, 
+      agentId: insertBlueprint.agentId || null,
       createdAt: new Date() 
     };
     this.blueprints.set(id, blueprint);
@@ -183,6 +184,7 @@ export class MemStorage implements IStorage {
     const deployment: Deployment = { 
       ...insertDeployment, 
       id,
+      agentId: insertDeployment.agentId || null,
       status: 'pending',
       stage: 'code_generation',
       progress: 0,
@@ -226,6 +228,9 @@ export class MemStorage implements IStorage {
     const log: ActivityLog = { 
       ...insertLog, 
       id, 
+      agentId: insertLog.agentId || null,
+      deploymentId: insertLog.deploymentId || null,
+      metadata: insertLog.metadata || null,
       createdAt: new Date() 
     };
     this.activityLogs.set(id, log);
