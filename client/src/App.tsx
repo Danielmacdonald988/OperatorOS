@@ -31,7 +31,7 @@ function AppContent() {
   return (
     <div className="bg-dark min-h-screen text-gray-100 font-sans flex">
       <Sidebar 
-        agentCount={stats?.activeAgents || 0}
+        agentCount={(stats as any)?.activeAgents || 0}
         logCount={logs.length}
         isOnline={isConnected}
       />
