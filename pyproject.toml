@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "workspace"
+version = "0.1.0"
+description = ""
+authors = ["Danielmacdonald988 <49652589+Danielmacdonald988@users.noreply.github.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+fastapi = "^0.115.14"
+uvicorn = "^0.35.0"
+openai = "^1.93.0"
+python-dotenv = "^1.1.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
