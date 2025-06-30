@@ -189,7 +189,7 @@ class DeployResponse(BaseModel):
     agent_file: str
     slug: str
 
-@router.post("/api/deploy", response_model=DeployResponse)
+@router.post("/api/deploy")
 async def deploy_agent(request: Optional[DeployRequest] = None, prompt: Optional[str] = Query(None, description="Natural language prompt for agent generation")):
     """
     Deploy endpoint that accepts natural language input and converts it to Python agent code.
@@ -230,8 +230,13 @@ async def deploy_agent(request: Optional[DeployRequest] = None, prompt: Optional
         
         log_deployment(f"Agent code generated and saved to {agent_filename}", "success")
         
-        # Create new agent ID
-        new_agent_id = len(sample_agents) + 1
+        # Create new agent ID (ensure it's always a valid integer)
+        import time
+        new_agent_id = int(time.time() * 1000) % 10000  # Use timestamp-based ID for uniqueness
+        
+        # Fallback to simple counter if needed
+        if new_agent_id <= 0:
+            new_agent_id = len(sample_agents) + 1
         
         # Add to sample agents list (in production this would be saved to database)
         new_agent = Agent(
@@ -247,13 +252,14 @@ async def deploy_agent(request: Optional[DeployRequest] = None, prompt: Optional
         
         log_deployment(f"Agent {new_agent_id} successfully deployed as {slug}", "success")
         
-        return DeployResponse(
-            status="success",
-            message=f"Agent successfully generated and deployed from prompt: '{user_prompt[:50]}...'",
-            agent_id=new_agent_id,
-            agent_file=agent_filename,
-            slug=slug
-        )
+        # Return simple format for frontend compatibility
+        return {
+            "status": "success",
+            "agent_id": new_agent_id,
+            "message": f"Agent successfully generated and deployed from prompt: '{user_prompt[:50]}...'",
+            "agent_file": agent_filename,
+            "slug": slug
+        }
         
     except HTTPException:
         raise
