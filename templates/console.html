@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OperatorGPT Console</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: #e2e8f0;
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 40px 0;
+        }
+        
+        .header h1 {
+            font-size: 4rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 1.2rem;
+            color: #94a3b8;
+            margin-bottom: 30px;
+        }
+        
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #065f46;
+            color: #10b981;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+        
+        .card {
+            background: rgba(30, 41, 59, 0.8);
+            border: 1px solid #334155;
+            border-radius: 12px;
+            padding: 24px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-2px);
+            border-color: #3b82f6;
+            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.15);
+        }
+        
+        .card h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #f1f5f9;
+        }
+        
+        .card p {
+            color: #94a3b8;
+            margin-bottom: 16px;
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 16px;
+        }
+        
+        .stat {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #3b82f6;
+        }
+        
+        .stat-label {
+            font-size: 0.8rem;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .deploy-section {
+            background: rgba(30, 41, 59, 0.8);
+            border: 1px solid #334155;
+            border-radius: 12px;
+            padding: 32px;
+            text-align: center;
+            margin: 40px 0;
+        }
+        
+        .deploy-section h2 {
+            font-size: 2rem;
+            margin-bottom: 16px;
+            color: #f1f5f9;
+        }
+        
+        .prompt-input {
+            width: 100%;
+            max-width: 600px;
+            padding: 16px;
+            background: #1e293b;
+            border: 2px solid #334155;
+            border-radius: 8px;
+            color: #e2e8f0;
+            font-size: 1rem;
+            margin: 20px auto;
+            display: block;
+            transition: border-color 0.3s ease;
+        }
+        
+        .prompt-input:focus {
+            outline: none;
+            border-color: #3b82f6;
+        }
+        
+        .deploy-btn {
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            border: none;
+            color: white;
+            padding: 16px 32px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 16px;
+        }
+        
+        .deploy-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
+        }
+        
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 40px;
+        }
+        
+        .feature {
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .feature-icon {
+            font-size: 2.5rem;
+            margin-bottom: 12px;
+        }
+        
+        .feature h4 {
+            font-size: 1.1rem;
+            margin-bottom: 8px;
+            color: #f1f5f9;
+        }
+        
+        .feature p {
+            font-size: 0.9rem;
+            color: #94a3b8;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 60px;
+            padding: 20px;
+            border-top: 1px solid #334155;
+            color: #64748b;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>OperatorGPT</h1>
+            <p>Autonomous AI Agent Deployment Platform</p>
+            <div class="status-badge">
+                <span>🟢</span>
+                System Online
+            </div>
+        </div>
+        
+        <div class="grid">
+            <div class="card">
+                <h3>🤖 Active Agents</h3>
+                <p>AI agents currently running and serving requests</p>
+                <div class="stats">
+                    <div class="stat">
+                        <div class="stat-value">12</div>
+                        <div class="stat-label">Active</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value">3</div>
+                        <div class="stat-label">Deploying</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value">47</div>
+                        <div class="stat-label">Total</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h3>📊 Performance</h3>
+                <p>System performance and deployment metrics</p>
+                <div class="stats">
+                    <div class="stat">
+                        <div class="stat-value">98.5%</div>
+                        <div class="stat-label">Uptime</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value">1.2s</div>
+                        <div class="stat-label">Response</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value">156</div>
+                        <div class="stat-label">Deploys</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h3>🚀 Latest Deployment</h3>
+                <p>Most recent agent deployment status</p>
+                <div class="stats">
+                    <div class="stat">
+                        <div class="stat-value">✅</div>
+                        <div class="stat-label">Success</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value">3m</div>
+                        <div class="stat-label">Duration</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value">Now</div>
+                        <div class="stat-label">Time</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="deploy-section">
+            <h2>Deploy New Agent</h2>
+            <p>Describe your AI agent in natural language and we'll generate, test, and deploy it automatically</p>
+            <input 
+                type="text" 
+                class="prompt-input" 
+                placeholder="e.g., 'Create an agent that processes CSV files and generates insights'"
+                id="promptInput"
+            >
+            <button class="deploy-btn" onclick="deployAgent()">
+                🚀 Deploy Agent
+            </button>
+        </div>
+        
+        <div class="features">
+            <div class="feature">
+                <div class="feature-icon">🧠</div>
+                <h4>AI-Powered</h4>
+                <p>GPT-4 generates production-ready code from natural language descriptions</p>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">⚡</div>
+                <h4>Auto-Deploy</h4>
+                <p>Automatic testing, GitHub integration, and Render deployment pipeline</p>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">📈</div>
+                <h4>Scalable</h4>
+                <p>Built on FastAPI and cloud infrastructure for enterprise-grade performance</p>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">🔧</div>
+                <h4>No-Code</h4>
+                <p>Deploy sophisticated AI agents without writing a single line of code</p>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>OperatorGPT v1.0 | Powered by FastAPI + Jinja2 | Deployed on Render</p>
+        </div>
+    </div>
+    
+    <script>
+        async function deployAgent() {
+            const prompt = document.getElementById('promptInput').value;
+            if (!prompt.trim()) {
+                alert('Please enter a description for your agent');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/deploy', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ prompt: prompt })
+                });
+                
+                const result = await response.json();
+                alert(`Deployment started! Agent ID: ${result.agent_id}`);
+                document.getElementById('promptInput').value = '';
+            } catch (error) {
+                alert('Error starting deployment. Please try again.');
+                console.error('Deployment error:', error);
+            }
+        }
+        
+        // Add enter key support for prompt input
+        document.getElementById('promptInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                deployAgent();
+            }
+        });
+    </script>
+</body>
+</html>
