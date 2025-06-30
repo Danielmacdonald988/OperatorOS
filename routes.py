@@ -268,11 +268,24 @@ async def deploy_agent(request: Optional[DeployRequest] = None, prompt: Optional
         log_deployment(error_msg, "error")
         raise HTTPException(status_code=500, detail=error_msg)
 
-# Also support JSON body requests
-@router.post("/api/deploy-json", response_model=DeployResponse)
-async def deploy_agent_json(request: DeployRequest):
+# Also support /api/deployments endpoint (as mentioned by user)
+@router.post("/api/deployments")
+async def create_deployment(request: DeployRequest):
     """
-    Deploy endpoint that accepts JSON body with prompt.
-    Alternative to query parameter version.
+    Alternative deployment endpoint that matches frontend expectations.
+    Returns simplified response with status and agent_id.
     """
-    return await deploy_agent(prompt=request.prompt)
+    try:
+        # Use the existing deploy logic
+        result = await deploy_agent(request=request)
+        
+        # Return simplified format as requested by user
+        return {
+            "status": "started",
+            "agent_id": result["agent_id"],
+            "message": result["message"]
+        }
+        
+    except Exception as e:
+        log_deployment(f"Deployment via /api/deployments failed: {str(e)}", "error")
+        raise HTTPException(status_code=500, detail=f"Deployment failed: {str(e)}")

@@ -1,9 +1,9 @@
-# Agent generated from prompt: Create a test agent for debugging
-# Generated on: 2025-06-30T01:30:59.723830
+# Agent generated from prompt: Create agent via deployments endpoint
+# Generated on: 2025-06-30T01:31:57.245528
 
 #!/usr/bin/env python3
 """
-Agent: Create a test agent for debugging
+Agent: Create agent via deployments endpoint
 Generated as fallback template when OpenAI API unavailable
 """
 
@@ -13,10 +13,10 @@ import time
 from datetime import datetime
 
 class Agent:
-    """Autonomous agent for: Create a test agent for debugging"""
+    """Autonomous agent for: Create agent via deployments endpoint"""
     
     def __init__(self):
-        self.name = "Create a test agent for debugging"
+        self.name = "Create agent via deployments endpoint"
         self.status = "initialized"
         self.created_at = datetime.now()
     
