@@ -2,7 +2,7 @@ services:
   - type: web
     name: operatorgpt
     env: python
-    buildCommand: "pip install -r requirements.txt && npm ci && npm run build"
+    buildCommand: "./build.sh"
     startCommand: "python start.py"
     plan: free
     runtime: python
