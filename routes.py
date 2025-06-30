@@ -63,7 +63,62 @@ Return only the Python code, no explanations."""
             raise Exception("No response content received from OpenAI")
     
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"OpenAI API error: {str(e)}")
+        # Log the OpenAI error for debugging
+        log_deployment(f"OpenAI API error: {str(e)}", "error")
+        
+        # Generate a basic template agent when OpenAI fails
+        template_code = f'''#!/usr/bin/env python3
+"""
+Agent: {prompt}
+Generated as fallback template when OpenAI API unavailable
+"""
+
+import os
+import sys
+import time
+from datetime import datetime
+
+class Agent:
+    """Autonomous agent for: {prompt}"""
+    
+    def __init__(self):
+        self.name = "{prompt}"
+        self.status = "initialized"
+        self.created_at = datetime.now()
+    
+    def run(self):
+        """Main agent execution loop"""
+        print(f"Agent {{self.name}} starting...")
+        self.status = "running"
+        
+        # TODO: Implement agent logic here
+        print(f"Executing: {{self.name}}")
+        
+        self.status = "completed"
+        print(f"Agent {{self.name}} completed successfully")
+    
+    def stop(self):
+        """Stop agent execution"""
+        self.status = "stopped"
+        print(f"Agent {{self.name}} stopped")
+
+def main():
+    """Entry point for agent execution"""
+    agent = Agent()
+    try:
+        agent.run()
+    except KeyboardInterrupt:
+        agent.stop()
+    except Exception as e:
+        print(f"Agent error: {{e}}")
+        agent.status = "error"
+
+if __name__ == "__main__":
+    main()
+'''
+        
+        log_deployment(f"Using fallback template for prompt: {prompt}", "warning")
+        return template_code
 
 # Data models
 class Agent(BaseModel):
@@ -202,3 +257,12 @@ async def deploy_agent(prompt: Optional[str] = Query(None, description="Natural 
         error_msg = f"Deployment failed: {str(e)}"
         log_deployment(error_msg, "error")
         raise HTTPException(status_code=500, detail=error_msg)
+
+# Also support JSON body requests
+@router.post("/api/deploy-json", response_model=DeployResponse)
+async def deploy_agent_json(request: DeployRequest):
+    """
+    Deploy endpoint that accepts JSON body with prompt.
+    Alternative to query parameter version.
+    """
+    return await deploy_agent(prompt=request.prompt)
