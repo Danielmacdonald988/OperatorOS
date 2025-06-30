@@ -1,9 +1,69 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Query, HTTPException, Body
 from pydantic import BaseModel
 from typing import List, Optional
 from datetime import datetime
+import os
+import re
+import json
+from openai import OpenAI
 
 router = APIRouter()
+
+# Initialize OpenAI client
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+# Utility functions
+def create_slug(text: str) -> str:
+    """Convert text to a safe filename slug"""
+    slug = re.sub(r'[^\w\s-]', '', text.lower())
+    slug = re.sub(r'[-\s]+', '-', slug)
+    return slug.strip('-')[:50]
+
+def log_deployment(message: str, level: str = "info"):
+    """Log deployment actions to logs/deployments.log"""
+    timestamp = datetime.now().isoformat()
+    log_entry = f"[{timestamp}] {level.upper()}: {message}\n"
+    
+    # Ensure logs directory exists
+    os.makedirs("logs", exist_ok=True)
+    
+    # Append to deployment log
+    with open("logs/deployments.log", "a") as f:
+        f.write(log_entry)
+
+def generate_agent_code(prompt: str) -> str:
+    """Use OpenAI GPT-4 to generate Python agent code from natural language"""
+    system_prompt = """You are an expert Python developer creating autonomous AI agents. 
+Generate clean, production-ready Python code based on the user's natural language description.
+
+Requirements:
+- Create a complete Python agent class
+- Include proper imports and error handling
+- Add docstrings and comments
+- Make the agent autonomous and functional
+- Use modern Python patterns and best practices
+- Include a main() function to run the agent
+
+Return only the Python code, no explanations."""
+
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4o",  # the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": f"Create a Python agent for: {prompt}"}
+            ],
+            max_tokens=2000,
+            temperature=0.7
+        )
+        
+        if response.choices and response.choices[0].message.content:
+            return response.choices[0].message.content.strip()
+        else:
+            raise Exception("No response content received from OpenAI")
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"OpenAI API error: {str(e)}")
 
 # Data models
 class Agent(BaseModel):
@@ -67,10 +127,78 @@ async def get_agent(agent_id: int):
 class DeployRequest(BaseModel):
     prompt: str
 
-@router.post("/api/deploy")
-async def deploy_agent(request: DeployRequest):
-    return {
-        "status": "success",
-        "message": f"Deployment started for prompt: {request.prompt[:50]}...",
-        "agent_id": len(sample_agents) + 1
-    }
+class DeployResponse(BaseModel):
+    status: str
+    message: str
+    agent_id: int
+    agent_file: str
+    slug: str
+
+@router.post("/api/deploy", response_model=DeployResponse)
+async def deploy_agent(prompt: Optional[str] = Query(None, description="Natural language prompt for agent generation")):
+    """
+    Deploy endpoint that accepts natural language input and converts it to Python agent code.
+    Accepts query parameter ?prompt=
+    """
+    try:
+        # Get prompt from query parameter
+        user_prompt = prompt
+        
+        if not user_prompt:
+            raise HTTPException(status_code=400, detail="Prompt is required via JSON body or ?prompt= query parameter")
+        
+        # Log the deployment start
+        log_deployment(f"Starting deployment for prompt: '{user_prompt[:100]}'", "info")
+        
+        # Generate agent code using OpenAI GPT-4
+        log_deployment("Generating agent code with OpenAI GPT-4", "info")
+        agent_code = generate_agent_code(user_prompt)
+        
+        # Create slug for filename
+        slug = create_slug(user_prompt)
+        if not slug:
+            slug = f"agent-{len(sample_agents) + 1}"
+        
+        # Ensure agents directory exists
+        os.makedirs("agents", exist_ok=True)
+        
+        # Save agent code to file
+        agent_filename = f"agents/{slug}.py"
+        with open(agent_filename, "w") as f:
+            f.write(f"# Agent generated from prompt: {user_prompt}\n")
+            f.write(f"# Generated on: {datetime.now().isoformat()}\n\n")
+            f.write(agent_code)
+        
+        log_deployment(f"Agent code generated and saved to {agent_filename}", "success")
+        
+        # Create new agent ID
+        new_agent_id = len(sample_agents) + 1
+        
+        # Add to sample agents list (in production this would be saved to database)
+        new_agent = Agent(
+            id=new_agent_id,
+            name=f"Agent {slug.replace('-', ' ').title()}",
+            description=user_prompt[:100],
+            status="deployed",
+            created_at=datetime.now(),
+            github_url="https://github.com/Danielmacdonald988/OperatorOS",
+            render_url="https://operatoros.onrender.com"
+        )
+        sample_agents.append(new_agent)
+        
+        log_deployment(f"Agent {new_agent_id} successfully deployed as {slug}", "success")
+        
+        return DeployResponse(
+            status="success",
+            message=f"Agent successfully generated and deployed from prompt: '{user_prompt[:50]}...'",
+            agent_id=new_agent_id,
+            agent_file=agent_filename,
+            slug=slug
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        error_msg = f"Deployment failed: {str(e)}"
+        log_deployment(error_msg, "error")
+        raise HTTPException(status_code=500, detail=error_msg)
