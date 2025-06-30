@@ -289,3 +289,42 @@ async def create_deployment(request: DeployRequest):
     except Exception as e:
         log_deployment(f"Deployment via /api/deployments failed: {str(e)}", "error")
         raise HTTPException(status_code=500, detail=f"Deployment failed: {str(e)}")
+
+# Initialize GitPushAgent on startup
+git_push_agent = None
+
+def initialize_git_push_agent():
+    """Initialize and start the GitPushAgent"""
+    global git_push_agent
+    
+    try:
+        import sys
+        import os
+        
+        # Add agents directory to path
+        agents_path = os.path.join(os.getcwd(), 'agents')
+        if agents_path not in sys.path:
+            sys.path.append(agents_path)
+        
+        # Import and initialize GitPushAgent using dynamic import
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("git_push_agent", "agents/git-push-agent.py")
+        git_push_module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(git_push_module)
+        GitPushAgent = git_push_module.GitPushAgent
+        
+        git_push_agent = GitPushAgent()
+        git_push_agent.start()
+        
+        log_deployment("GitPushAgent initialized and started successfully", "info")
+        print("🤖 GitPushAgent is now monitoring for new agents...")
+        
+    except Exception as e:
+        log_deployment(f"Failed to initialize GitPushAgent: {str(e)}", "error")
+        print(f"❌ GitPushAgent initialization failed: {e}")
+
+# Auto-start GitPushAgent when routes module is imported
+try:
+    initialize_git_push_agent()
+except Exception as e:
+    print(f"Warning: GitPushAgent auto-start failed: {e}")
