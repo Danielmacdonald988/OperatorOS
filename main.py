@@ -9,12 +9,16 @@ import os
 from datetime import datetime
 import uuid
 import logging
+from routes import router
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = FastAPI(title="OperatorGPT", description="Autonomous AI Agent Deployment Platform")
+
+# Include router
+app.include_router(router)
 
 # WebSocket connection manager
 class ConnectionManager:
@@ -352,9 +356,7 @@ async def websocket_endpoint(websocket: WebSocket):
     except WebSocketDisconnect:
         manager.disconnect(websocket)
 
-# Serve static files
-if os.path.exists("dist/public"):
-    app.mount("/", StaticFiles(directory="dist/public", html=True), name="static")
+# Static files are handled by the router homepage
 
 if __name__ == "__main__":
     import uvicorn
