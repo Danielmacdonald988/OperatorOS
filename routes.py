@@ -190,14 +190,18 @@ class DeployResponse(BaseModel):
     slug: str
 
 @router.post("/api/deploy", response_model=DeployResponse)
-async def deploy_agent(prompt: Optional[str] = Query(None, description="Natural language prompt for agent generation")):
+async def deploy_agent(request: Optional[DeployRequest] = None, prompt: Optional[str] = Query(None, description="Natural language prompt for agent generation")):
     """
     Deploy endpoint that accepts natural language input and converts it to Python agent code.
-    Accepts query parameter ?prompt=
+    Accepts both JSON body and query parameter ?prompt=
     """
     try:
-        # Get prompt from query parameter
-        user_prompt = prompt
+        # Get prompt from either JSON body or query parameter
+        user_prompt = None
+        if request and request.prompt:
+            user_prompt = request.prompt
+        elif prompt:
+            user_prompt = prompt
         
         if not user_prompt:
             raise HTTPException(status_code=400, detail="Prompt is required via JSON body or ?prompt= query parameter")
